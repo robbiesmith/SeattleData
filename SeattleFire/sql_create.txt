@@ -1,0 +1,150 @@
+
+create database seattle_data
+
+use seattle_data
+
+-----
+OLD VERSION
+
+create table incident (
+  number varchar(12) primary key not null,
+  datetime datetime not null,
+  level int
+);
+ 
+create table unit (
+  name varchar(10) unique not null,
+  id int not null identity(1,1) primary key
+)
+ 
+create table location (
+  raw_location varchar(80) unique not null,
+  street_number varchar(20),
+  street_name varchar(60),
+  cross_street varchar(40),
+  place geography,
+  id int not null identity(1,1) primary key
+)
+ 
+create table type (
+  raw_type varchar(40) unique not null,
+  id int not null identity(1,1) primary key
+)
+ 
+create table incident_unit (
+  id int not null identity(1,1) primary key,
+  incidentNumber    varchar(12) references incident(number)
+                on update cascade on delete cascade,
+  unit_name varchar(10) references unit(name)
+                on update cascade on delete cascade
+)
+ 
+create table incident_type (
+  id int not null identity(1,1) primary key,
+  incidentNumber    varchar(12) references incident(number)
+                on update cascade on delete cascade,
+  raw_type varchar(40) references type(raw_type)
+                on update cascade on delete cascade
+)
+ 
+create table incident_location (
+  id int not null identity(1,1) primary key,
+  incidentNumber    varchar(12) references incident(number)
+                on update cascade on delete cascade,
+  raw_location varchar(80) references location(raw_location)
+                on update cascade on delete cascade
+)
+
+ALTER TABLE incident_unit
+ALTER COLUMN incidentNumber varchar(12) not null;
+
+ALTER TABLE incident_unit
+ALTER COLUMN unit_name varchar(10) not null;
+    
+ALTER TABLE incident_unit
+    ADD CONSTRAINT pk_i_u PRIMARY KEY (incidentNumber,unit_name)
+
+ALTER TABLE incident_type
+ALTER COLUMN incidentNumber varchar(12) not null;
+
+ALTER TABLE incident_type
+ALTER COLUMN raw_type varchar(40) not null;
+
+ALTER TABLE incident_type
+    ADD CONSTRAINT pk_i_t PRIMARY KEY (incidentNumber,raw_type)
+
+
+ALTER TABLE incident_location
+ALTER COLUMN incidentNumber varchar(12) not null;
+
+ALTER TABLE incident_location
+ALTER COLUMN raw_location varchar(80) not null;
+
+ALTER TABLE incident_location
+    ADD CONSTRAINT pk_i_l PRIMARY KEY (incidentNumber,raw_location)
+
+alter database data
+modify ( SERVICE_OBJECTIVE =  'S0' ) -- S0 lowest - S3 a more responsive level
+
+-----
+NEW VERSION - NOT WORKING WITH CURRENT CODE
+
+create table incident2 (
+ number nvarchar(12) unique not null,
+ datetime datetime not null,
+ level int,
+ id int not null identity(1,1) primary key
+);
+
+create table unit2 (
+ name nvarchar(10) unique not null,
+ id int not null identity(1,1) primary key
+)
+
+create table location2 (
+ raw_location nvarchar(80) unique not null,
+ street_number nvarchar(20),
+ street_name nvarchar(60),
+ cross_street nvarchar(40),
+ place geography,
+ id int not null identity(1,1) primary key
+)
+
+create table type2 (
+ raw_type nvarchar(40) unique not null,
+ id int not null identity(1,1) primary key
+)
+
+
+create table incident_unit2 (
+  incidentId int references incident2(id)
+     on update cascade on delete cascade,
+  unitId int references unit2(id)
+     on update cascade on delete cascade,
+     primary key (
+       incidentId,
+       unitId
+     )
+)
+
+create table incident_location2 (
+  incidentId int references incident2(id)
+     on update cascade on delete cascade,
+  locationId int references location2(id)
+     on update cascade on delete cascade,
+     primary key (
+       incidentId,
+       locationId
+     )
+)
+
+create table incident_type2 (
+  incidentId int references incident2(id)
+     on update cascade on delete cascade,
+  typeId int references type2(id)
+     on update cascade on delete cascade,
+     primary key (
+       incidentId,
+       typeId
+     )
+)
