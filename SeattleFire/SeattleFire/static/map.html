@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+<html>
+  <head>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /*
+      #data {
+        height: 100%;
+        width: 200px;
+        float:left;
+      }
+      */
+      /*
+      #choices {
+        height: 100%;
+        width: 200px;
+        float:right;
+      }
+      */
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .chart rect {
+          fill: steelblue;
+        }
+
+        .chart text {
+          fill: steelblue;
+          font: 10px sans-serif;
+/*          text-anchor: end; */
+        }
+
+       
+        .loader {
+            border: 16px solid #f3f3f3; /* Light grey */
+            border-top: 16px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </head>
+  <body>
+  <nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Seattle Fire Responses</a>
+    </div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="#" data-toggle="modal" data-target="#data">Charts</a></li>
+        <li><a href="#" data-toggle="modal" data-target="#units">By unit</a></li>
+        <li><a href="#" data-toggle="modal" data-target="#choices">By event type</a></li>
+        <li><a href="#" data-toggle="modal" data-target="#dates">By date</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">By region<span class="caret"></span></a>
+          <ul id="regionDropdown" class="dropdown-menu">
+            <li><a href="#" id="regionOn">On</a></li>
+            <li class="active"><a href="#" id="regionOff">Off</a></li>
+          </ul>
+        </li>
+      </ul>
+      <form class="navbar-form navbar-left" action="javascript:updateChoices()">
+        <button type="submit" class="btn btn-default">Update</button>
+      </form>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#" data-toggle="modal" data-target="#about">About</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+    <div id="map"></div>
+    <!-- Modals -->
+<div id="data" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Data Totals</h4>
+      </div>
+      <div class="modal-body">
+        <h4>Events by type</h4>
+        <svg id="typechart" class="chart"></svg>
+        <h4>Events by unit</h4>
+        <svg id="unitchart" class="chart"></svg>
+        <h4>Events by hour</h4>
+        <svg id="hourchart" class="chart"></svg>
+        <h4>Events by weekday</h4>
+        <svg id="weekdaychart" class="chart"></svg>
+        <h4>Events by month</h4>
+        <svg id="monthchart" class="chart"></svg>
+        <h4>Events by year</h4>
+        <svg id="yearchart" class="chart"></svg>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="units" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Which units?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Show events where all of the following responded:</p>
+        <div id="unitholder"></div>
+        <button type="button" id="clearUnits">Clear All</button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="choices" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Event type</h4>
+      </div>
+      <div class="modal-body">
+        <p>Show events of any of the following types:</p>
+        <div id="typeholder"></div>
+        <button type="button" id="clearEventTypes">Clear All</button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="dates" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Dates</h4>
+      </div>
+      <div class="modal-body">
+        <p>Show events between the following dates:</p>
+        <form id="targetdate">
+          <input type="date" name="startdate">
+          <input type="date" name="enddate">
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="loading" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="loader"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="about" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">About</h4>
+      </div>
+      <div class="modal-body">
+        <p>Data viewer for seeing incidents that Seattle Fire Department has responded to since 2003. You can choose
+        incidents by type (such as Fire or Vehicle), by unit name (such as E17 (Engine 17) or B5 (Battalion Chief 5)),
+        by date, or by geographic region.</p>
+        <p>A good starting example would be choose the event type Fire House Boat and press Update.</p>
+        <p>Under Charts you can find the data broken down with more detail including by day of week and hour of day, and more.</p>
+        <p>Developed by Rob Smith.</p>
+        <p>Data courtesy <a href="https://data.seattle.gov/">Seattle Open Data</a>.</p>
+        <p>Source code available at https://github.com/robbiesmith/SeattleData</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+    <script>
+        function updateChoices() {
+            deleteMarkers();
+            deleteHeatmap();
+            deleteGraphs();
+
+            var startdate = $("#targetdate :input[name=startdate]").val();
+            var enddate = $("#targetdate :input[name=enddate]").val();
+            var coords = rectangle.getBounds().getNorthEast().lat() + "," + rectangle.getBounds().getNorthEast().lng() + "," + rectangle.getBounds().getSouthWest().lat() + "," + rectangle.getBounds().getSouthWest().lng();
+            if (!rectangle.getMap()) {
+                coords = null;
+            }
+            var unitsarray = []
+            $("#unitholder :input[name='unitpicker[]']:checked").each(function ()
+            {
+                unitsarray.push(this.value);
+            });
+            var typesarray = []
+            $("#typeholder :input[name='typepicker[]']:checked").each(function ()
+            {
+                typesarray.push(this.value);
+            });
+            loadData({coords:coords, startdate:startdate, enddate:enddate, units:unitsarray, types:typesarray});
+        }
+    </script>
+
+    <script>
+      var map;
+      var rectangle;
+      var markers = [];
+      var heatmapdata = [];
+      var heatmap = null;
+      var loadRequest = null;
+      
+      function deleteMarkers() {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+        markers = [];
+      }
+      
+      function deleteHeatmap() {
+        if (heatmap) {
+            heatmap.setMap(null);
+        }
+        heatmapdata = [];
+      }
+      
+      $("#clearEventTypes").click(function(e){
+        $("#typeholder").find("input").prop('checked',false);
+        e.preventDefault();
+      });
+      $("#clearUnits").click(function(e){
+        $("#unitholder").find("input").prop('checked',false);
+        e.preventDefault();
+      });
+
+      $("#regionOn").click(function(e){
+        rectangle.setMap(map);
+        $("#regionDropdown").find("li").removeClass("active");
+        $(this).parent().addClass('active'); 
+        e.preventDefault();
+        });
+      $("#regionOff").click(function(e){
+        rectangle.setMap(null);
+        $("#regionDropdown").find("li").removeClass("active");
+        $(this).parent().addClass('active'); 
+        e.preventDefault();
+      });
+      
+      function deleteGraphs() {
+        d3.selectAll("svg").html("");
+      }
+      
+      function loadData(options={}) {
+          var units = options.units || [];
+          var types = options.types || [];
+          var coords = options.coords || null;
+          var startdate = options.startdate || null;
+          var enddate = options.enddate || null;
+      var params = [];
+      if (coords) {
+        params.push({name:"region", value:coords});
+      }
+          for (var i in units) {
+            params.push({name:"unit", value:units[i]});
+          }
+          for (var i in types) {
+            params.push({name:"type", value:types[i]});
+          }
+          if (startdate && enddate) {
+            params.push({name:"startdate", value:startdate});
+            params.push({name:"enddate", value:enddate});
+          }
+//      console.log(params);
+      $('#loading').modal('show');
+      
+      if (loadRequest) {
+        loadRequest.abort();
+      }
+
+      loadRequest = $.ajax({
+          url: "/query?"+ $.param(params)
+        }).done(function(data) {
+            loadRequest = null;
+
+            $('#loading').modal('hide');
+
+            var maptype = data.display;
+            for (var key in data['incident']) {
+                var item = data.incident[key];
+                var latLng = new google.maps.LatLng(item.location[0],item.location[1]);
+                if (maptype == "all") {
+                    var marker = new google.maps.Marker({
+                        position: latLng,
+                        map: map,
+                        title: data.incident[key].datetime + ' ' + data.incident[key].type + ' ' + data.incident[key].rawLocation
+                    });
+                    markers.push(marker);
+                } else if (maptype == "heatmap") {
+                    heatmapdata.push(latLng);
+                }
+            }
+            if (maptype == "heatmap") {
+                heatmap = new google.maps.visualization.HeatmapLayer({
+                  data: heatmapdata,
+                  radius: 50
+                });
+                heatmap.setMap(map);
+            }
+
+            var weekdaygraphdata = data['totals']['weekday'];
+            
+            setgraph(weekdaygraphdata, ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], "#weekdaychart");
+
+            var monthdgraphdata = data['totals']['month'];
+            monthdgraphdata.shift();
+            
+            setgraph(monthdgraphdata, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "#monthchart");
+
+            var hourgraphdata = data['totals']['hour'];
+            function hourname(num) {
+                if (num == 0) return ('12:00 AM');
+                if (num > 12) return ((num - 12) + ':00 PM');
+                return num + ':00 AM';
+            }
+            setgraph(hourgraphdata, (function() {var a = []; var start = 0; var stop = 24; while(start < stop){ a.push(hourname(start++));}; return a; })(), "#hourchart"); // should add a.m./p.m.
+
+            var yeargraphdata = $.map(data['totals']['year'], function(value, key) { return value });
+            
+            setgraph(yeargraphdata, $.map(data['totals']['year'], function(value, key) { return key }), "#yearchart");
+
+            var unitgraphdata = data['totals']['unit'];
+            var largest = [0];
+            for (var key in unitgraphdata){
+                if (unitgraphdata[key] > Math.min(...largest)) {
+                    largest.push(unitgraphdata[key]);
+                    largest.sort(function(a, b){return a-b});
+                    if (largest.length > 10) {
+                        largest.shift();
+                    }
+                }
+            }
+            for (var key in unitgraphdata){
+                if (unitgraphdata[key] < Math.min(...largest)) {
+                    delete unitgraphdata[key];
+                }
+            }
+          
+            setgraph($.map(unitgraphdata, function(value, key) { return value }), $.map(unitgraphdata, function(value, key) { return key }), "#unitchart");
+
+            var typegraphdata = data['totals']['type'];
+            largest = [0];
+            for (var key in typegraphdata){
+                if (typegraphdata[key] > Math.min(...largest)) {
+                    largest.push(typegraphdata[key]);
+                    largest.sort(function(a, b){return a-b});
+                    if (largest.length > 10) {
+                        largest.shift();
+                    }
+                }
+            }
+            for (var key in typegraphdata){
+                if (typegraphdata[key] < Math.min(...largest)) {
+                    delete typegraphdata[key];
+                }
+            }
+          
+            setgraph($.map(typegraphdata, function(value, key) { return value }), $.map(typegraphdata, function(value, key) { return key }), "#typechart");
+    
+        }).fail(function(data) {
+            loadRequest = null;
+
+            $('#loading').modal('hide');
+        });
+        }
+        
+        function updateRect() {
+            updateChoices();
+        }
+
+      function initMap() {
+        $('#about').modal('show');
+
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 11,
+          center: new google.maps.LatLng(47.65,-122.28),
+          mapTypeId: 'terrain'
+        });
+      rectangle = new google.maps.Rectangle({
+    strokeColor: '#FF0000',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#FF0000',
+    fillOpacity: 0.15,
+    editable: true,
+    bounds: {
+      north: 47.73548,
+      south: 47.500876,
+      east: -122.24447,
+      west: -122.44
+    }
+  });
+     google.maps.event.addListener(map, 'zoom_changed', function () {
+//          heatmap.setOptions({radius:getNewRadius()});
+// {radius:Math.floor(desiredRadiusPerPointInMeters*pixelsPerMeter)}
+      });
+      /*
+      rectangle.addListener('bounds_changed', updateRect);
+        updateChoices();
+
+      }
+      */
+    };
+
+      $(document).ready(function(e) {
+      $.ajax({
+          url: "/units"
+        }).done(function(data) {
+          var unitContent = $("<div class='row-fluid'></div>");
+        for (item in data) {
+            unitContent.append('<div class="col-md-3"><input type="checkbox" name="unitpicker[]" value="' + item + '">' + item + '</div>');
+
+        }
+        $("#unitholder").append($("<div class='container-fluid'></div>").append(unitContent));
+        });
+      $.ajax({
+          url: "/types"
+        }).done(function(data) {
+          var dataCats = {};
+          for (var item in data) {
+            for (var cat in data[item]) {
+              if (dataCats.hasOwnProperty(data[item][cat])) {
+                dataCats[data[item][cat]].push(item);
+              } else {
+                dataCats[data[item][cat]] = [item];
+              }
+            }
+          }
+
+          var typeContent = $("#typeholder");
+          var panelContent = $('<div class="panel-group"></div>')
+          for (var property in dataCats) {
+            if (dataCats.hasOwnProperty(property)) {
+              var groupContent = $("<div class='row-fluid'></div>");
+              for (var item in dataCats[property]){
+                groupContent.append('<div class="col-md-6"><input type="checkbox" name="typepicker[]" value="' + dataCats[property][item] + '">' + dataCats[property][item] + '</div>');
+              }
+
+              var groupHeader = '<div class="panel-heading"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse' + property + '">' + property + '</a></h4></div>';
+              panelContent.append(groupHeader);
+              panelContent.append($('<div id="collapse' + property + '" class="panel-collapse collapse"></div>').append($('<div class="panel-body"></div>').append(groupContent)));
+              typeContent.append(panelContent);
+           }
+          }
+        });
+
+        });
+        
+        function setgraph(data, labels, graphname) {
+            var width = 150,
+                barHeight = 20;
+
+            var x = d3.scaleLinear()
+                .domain([0, d3.max(data)])
+                .range([0, width]);
+
+            var chart = d3.select(graphname)
+                .attr("width", width * 2)
+                .attr("height", barHeight * data.length);
+
+            var bar = chart.selectAll("g")
+                .data(data)
+                .enter().append("g")
+                .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+
+            bar.append("rect")
+                .attr("width", x)
+                .attr("height", barHeight - 1);
+
+            bar.append("text")
+                .attr("x", function(d) { return x(d) + 3; })
+                .attr("y", barHeight / 2)
+                .attr("dy", ".35em")
+                .text(function(d, i) { return labels[i] + " (" + d + ")"; });
+
+            bar.append("svg:title")
+                    .text(function(d, i) { return labels[i] + ' (' + data[i] + ')'; })
+        };
+
+    </script>
+    <script async defer 
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD7JWiTb3rv5EMFvikEfGRkacG_h3ztFXQ&callback=initMap&libraries=visualization">
+    </script>
+  </body>
+</html>
