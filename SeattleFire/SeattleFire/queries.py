@@ -1,6 +1,7 @@
 import re
 from datetime import date
 from SeattleFire.cnxnMgr import getCursor
+from random import random
 
 def isFloat(string):
     try:
@@ -8,7 +9,14 @@ def isFloat(string):
         return True
     except ValueError:
         return False
-        
+
+def twiddle(value):
+    return value
+    # not useful - not representative of location while still leaving some markers at same location even zoomed
+    if not isFloat(value):
+        return value
+    return float(value) + random() * 0.0004 - 0.0002
+    
 def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
     types = set(types) # remove duplicates
     cursor = getCursor()
@@ -61,7 +69,6 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
         geoBody,
         date
         ))
-    fullDataLimit = 250
     partialDataLimit = 10000
     i = 0
     for row in cursor.execute("""
@@ -90,17 +97,14 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
 # for more tham M randomly replace data so that a total of M items is returned
         incidentNumber = row[0]
         incidentDateTime = row[1]
-        incidentLat = row[2]
-        incidentLong = row[3]
+        incidentLat = twiddle(row[2])
+        incidentLong = twiddle(row[3])
         incidentType = row[4]
         incidentUnit = row[5]
         rawLocation = row[6]
         if not incidentNumber in output["incident"]:
             if i < partialDataLimit:
-                if i < fullDataLimit:
-                    output["incident"][incidentNumber] = {"type":incidentType, "unit":[incidentUnit], "location":(incidentLat, incidentLong), "datetime":incidentDateTime, "rawLocation":rawLocation}
-                else:
-                    output["incident"][incidentNumber] = {"location":(incidentLat, incidentLong)}
+                output["incident"][incidentNumber] = {"location":(incidentLat, incidentLong), "number":incidentNumber}
 
             if not incidentType in output["totals"]["type"]:
                 output["totals"]["type"][incidentType] = 1
@@ -117,16 +121,16 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
 
             i += 1 # count distinct incidents to determine display type
         else:
-            if i < fullDataLimit:
-                output["incident"][incidentNumber]["unit"].append(incidentUnit)
+            pass
+#            output["incident"][incidentNumber]["unit"].append(incidentUnit)
 
         if not incidentUnit in output["totals"]["unit"]:
             output["totals"]["unit"][incidentUnit] = 1
         else:
             output["totals"]["unit"][incidentUnit] +=1
 
-    if i > fullDataLimit:
-        output["display"] = "heatmap"
+#    if i > fullDataLimit:
+#        output["display"] = "heatmap"
 
     return output
 

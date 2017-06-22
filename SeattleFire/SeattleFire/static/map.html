@@ -64,6 +64,7 @@
 
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+      <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
   </head>
   <body>
   <nav class="navbar navbar-default">
@@ -82,16 +83,16 @@
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
         <li><a href="#" data-toggle="modal" data-target="#data">Charts</a></li>
-        <li><a href="#" data-toggle="modal" data-target="#units">By unit</a></li>
-        <li><a href="#" data-toggle="modal" data-target="#choices">By event type</a></li>
         <li><a href="#" data-toggle="modal" data-target="#dates">By date</a></li>
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">By region<span class="caret"></span></a>
-          <ul id="regionDropdown" class="dropdown-menu">
-            <li><a href="#" id="regionOn">On</a></li>
-            <li class="active"><a href="#" id="regionOff">Off</a></li>
-          </ul>
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">By region<span class="caret"></span></a>
+            <ul id="regionDropdown" class="dropdown-menu">
+                <li><a href="#" id="regionOn">On</a></li>
+                <li class="active"><a href="#" id="regionOff">Off</a></li>
+            </ul>
         </li>
+        <li><a href="#" data-toggle="modal" data-target="#units">By unit</a></li>
+        <li><a href="#" data-toggle="modal" data-target="#choices">By event type</a></li>
       </ul>
       <form class="navbar-form navbar-left" action="javascript:updateChoices()">
         <button type="submit" class="btn btn-default">Update</button>
@@ -204,6 +205,17 @@
 
   </div>
 </div>
+<div id="message" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+            <div class="modal-body">
+                <p id="messageBody"></p>
+            </div>
+        </div>
+
+    </div>
+</div>
 <div id="about" class="modal fade" role="dialog">
   <div class="modal-dialog">
 
@@ -213,7 +225,7 @@
         <h4 class="modal-title">About</h4>
       </div>
       <div class="modal-body">
-        <p>Data viewer for seeing incidents that Seattle Fire Department has responded to since 2003. You can choose
+        <p>Data viewer for displaying incidents that Seattle Fire Department has responded to since 2003. You can choose
         incidents by type (such as Fire or Vehicle), by unit name (such as E17 (Engine 17) or B5 (Battalion Chief 5)),
         by date, or by geographic region.</p>
         <p>A good starting example would be choose the event type Fire House Boat and press Update.</p>
@@ -253,7 +265,7 @@
             });
             loadData({coords:coords, startdate:startdate, enddate:enddate, units:unitsarray, types:typesarray});
         }
-    </script>
+      </script>
 
     <script>
       var map;
@@ -262,12 +274,16 @@
       var heatmapdata = [];
       var heatmap = null;
       var loadRequest = null;
+      var markerCluster = null;
       
       function deleteMarkers() {
         for (var i = 0; i < markers.length; i++) {
           markers[i].setMap(null);
         }
         markers = [];
+        if (markerCluster) {
+            markerCluster.clearMarkers()
+        }
       }
       
       function deleteHeatmap() {
@@ -313,18 +329,34 @@
       if (coords) {
         params.push({name:"region", value:coords});
       }
-          for (var i in units) {
-            params.push({name:"unit", value:units[i]});
-          }
-          for (var i in types) {
-            params.push({name:"type", value:types[i]});
-          }
-          if (startdate && enddate) {
-            params.push({name:"startdate", value:startdate});
-            params.push({name:"enddate", value:enddate});
-          }
-//      console.log(params);
+      for (var i in units) {
+        params.push({name:"unit", value:units[i]});
+      }
+      for (var i in types) {
+        params.push({name:"type", value:types[i]});
+      }
+      if (startdate && enddate) {
+        params.push({name:"startdate", value:startdate});
+        params.push({name:"enddate", value:enddate});
+      }
+
       $('#loading').modal('show');
+
+      function getEventContent(item) {
+          console.log(item);
+          var output = '<p>';
+          output = output + 'Date: ' + item.datetime + '<br/>';
+          output = output + 'Place: ' + item.rawlocation + '<br/>';
+          output = output + 'Type: ' + item.type + '<br/>';
+          var sep = 'Units: ';
+          for (var i = 0, len = item.unit.length; i < len; i++) {
+              output = output + sep + item.unit[i];
+              sep = ', ';
+          }
+          output = output + '<br/>';
+          console.log(output);
+          return output;
+      }
       
       if (loadRequest) {
         loadRequest.abort();
@@ -337,6 +369,12 @@
 
             $('#loading').modal('hide');
 
+            if ($.isEmptyObject(data['incident'])) {
+                $('#messageBody').html('No incidents match your search criteria.');
+                $('#message').modal('show');
+                return;
+            }
+
             var maptype = data.display;
             for (var key in data['incident']) {
                 var item = data.incident[key];
@@ -345,13 +383,41 @@
                     var marker = new google.maps.Marker({
                         position: latLng,
                         map: map,
-                        title: data.incident[key].datetime + ' ' + data.incident[key].type + ' ' + data.incident[key].rawLocation
+                        number: data.incident[key].number
+                    });
+                    marker.addListener('click', function() {
+                        var thisMarker = this;
+                        var contentString = "loading details...";
+                        if (thisMarker.detail) {
+                            contentString = getEventContent(thisMarker.detail);
+                        }
+                        thisMarker.infowindow = new google.maps.InfoWindow({
+                            content: contentString
+                        });
+                        if (!thisMarker.infowindow.isOpen()) {
+                            thisMarker.infowindow.open(map, thisMarker);
+                        }
+                        if (!thisMarker.detail) {
+                            loadRequest = $.ajax({
+                                url: "/detail?number=" + this.number
+                            }).done(function(data) {
+                                thisMarker.detail = data[0];
+                                thisMarker.infowindow.close();
+                                thisMarker.infowindow = new google.maps.InfoWindow({
+                                    content: getEventContent(data[0])
+                                });
+                                thisMarker.infowindow.open(map, thisMarker);
+                            })
+                        }
                     });
                     markers.push(marker);
                 } else if (maptype == "heatmap") {
                     heatmapdata.push(latLng);
                 }
             }
+
+            markerCluster = new MarkerClusterer(map, markers,
+                {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
             if (maptype == "heatmap") {
                 heatmap = new google.maps.visualization.HeatmapLayer({
                   data: heatmapdata,
@@ -423,6 +489,8 @@
             loadRequest = null;
 
             $('#loading').modal('hide');
+            $('#messageBody').html('Data load failed.');
+            $('#message').modal('show');
         });
         }
         
@@ -431,6 +499,11 @@
         }
 
       function initMap() {
+        google.maps.InfoWindow.prototype.isOpen = function(){
+            var map = this.getMap();
+            return (map !== null && typeof map !== "undefined");
+        }
+
         $('#about').modal('show');
 
         map = new google.maps.Map(document.getElementById('map'), {
@@ -456,12 +529,6 @@
 //          heatmap.setOptions({radius:getNewRadius()});
 // {radius:Math.floor(desiredRadiusPerPointInMeters*pixelsPerMeter)}
       });
-      /*
-      rectangle.addListener('bounds_changed', updateRect);
-        updateChoices();
-
-      }
-      */
     };
 
       $(document).ready(function(e) {

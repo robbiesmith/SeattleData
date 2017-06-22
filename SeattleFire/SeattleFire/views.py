@@ -10,6 +10,7 @@ from SeattleFire.units import allunits
 from SeattleFire.eventtypes import alltypes
 from SeattleFire.cnxnMgr import getCursor
 from SeattleFire.queries import getIncidents
+from SeattleFire.detail import getDetail
 import traceback
 
 def json_serial(obj):
@@ -35,6 +36,17 @@ def units():
 @app.route("/types")
 def types():
     resp = Response(dumps(alltypes()), mimetype="application/json")
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+@app.route("/detail")
+def detail():
+    args = request.args
+    numbers = args.getlist('number')
+
+    output = dumps(getDetail(numbers), default=json_serial)
+
+    resp = Response(output, mimetype="application/json")
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 

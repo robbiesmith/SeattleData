@@ -36,6 +36,9 @@
     <Compile Include="SeattleFire\cnxnMgr.py" />
     <Compile Include="SeattleFire\config-template.py" />
     <Compile Include="SeattleFire\config.py" />
+    <Compile Include="SeattleFire\detail.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="SeattleFire\eventtypes.py" />
     <Compile Include="SeattleFire\queries.py" />
     <Compile Include="SeattleFire\units.py" />
