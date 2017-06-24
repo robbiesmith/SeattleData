@@ -113,17 +113,17 @@
         <h4 class="modal-title">Data Totals</h4>
       </div>
       <div class="modal-body">
-        <h4>Events by type</h4>
+        <h4>Incidents by type</h4>
         <svg id="typechart" class="chart"></svg>
-        <h4>Events by unit</h4>
+        <h4>Incidents by unit</h4>
         <svg id="unitchart" class="chart"></svg>
-        <h4>Events by hour</h4>
+        <h4>Incidents by hour</h4>
         <svg id="hourchart" class="chart"></svg>
-        <h4>Events by weekday</h4>
+        <h4>Incidents by weekday</h4>
         <svg id="weekdaychart" class="chart"></svg>
-        <h4>Events by month</h4>
+        <h4>Incidents by month</h4>
         <svg id="monthchart" class="chart"></svg>
-        <h4>Events by year</h4>
+        <h4>Incidents by year</h4>
         <svg id="yearchart" class="chart"></svg>
       </div>
       <div class="modal-footer">
@@ -142,7 +142,7 @@
         <h4 class="modal-title">Which units?</h4>
       </div>
       <div class="modal-body">
-        <p>Show events where all of the following responded:</p>
+        <p>Show incidents where all of the following responded:</p>
         <div id="unitholder"></div>
         <button type="button" id="clearUnits">Clear All</button>
       </div>
@@ -161,7 +161,7 @@
         <h4 class="modal-title">Event type</h4>
       </div>
       <div class="modal-body">
-        <p>Show events of any of the following types:</p>
+        <p>Show incidents of any of the following types:</p>
         <div id="typeholder"></div>
         <button type="button" id="clearEventTypes">Clear All</button>
       </div>
@@ -181,7 +181,7 @@
         <h4 class="modal-title">Dates</h4>
       </div>
       <div class="modal-body">
-        <p>Show events between the following dates:</p>
+        <p>Show incidents between the following dates:</p>
         <form id="targetdate">
           <input type="date" name="startdate">
           <input type="date" name="enddate">
@@ -228,8 +228,8 @@
         <p>Data viewer for displaying incidents that Seattle Fire Department has responded to since 2003. You can choose
         incidents by type (such as Fire or Vehicle), by unit name (such as E17 (Engine 17) or B5 (Battalion Chief 5)),
         by date, or by geographic region.</p>
-        <p>A good starting example would be choose the event type Fire House Boat and press Update.</p>
-        <p>Under Charts you can find the data broken down with more detail including by day of week and hour of day, and more.</p>
+        <p>A good starting example would be choose the incident type <em>Fire House Boat</em> and press <strong>Update</strong>.</p>
+        <p>Under <strong>Charts</strong> you can find the data broken down with more detail including by day of week and hour of day, and more.</p>
         <p>Developed by Rob Smith.</p>
         <p>Data courtesy <a href="https://data.seattle.gov/">Seattle Open Data</a>.</p>
         <p>Source code available at https://github.com/robbiesmith/SeattleData</p>
@@ -335,8 +335,10 @@
       for (var i in types) {
         params.push({name:"type", value:types[i]});
       }
-      if (startdate && enddate) {
-        params.push({name:"startdate", value:startdate});
+      if (startdate) {
+          params.push({name:"startdate", value:startdate});
+      }
+      if (enddate) {
         params.push({name:"enddate", value:enddate});
       }
 
@@ -353,8 +355,7 @@
               output = output + sep + item.unit[i];
               sep = ', ';
           }
-          output = output + '<br/>';
-          console.log(output);
+          output = output + '</p>';
           return output;
       }
       

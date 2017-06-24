@@ -26,6 +26,7 @@ bld/
 [Oo]bj/
 __pycache__/
 *.pubxml
+env2/
 
 # Visual Studio 2015 cache/options directory
 .vs/

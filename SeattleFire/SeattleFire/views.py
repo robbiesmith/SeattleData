@@ -58,7 +58,7 @@ def query():
     location = args.getlist('location')
     region = args.get('region', "")
     startdate = args.get('startdate', "2001-01-01")
-    enddate = args.get('enddate', "2020-01-01")
+    enddate = args.get('enddate', "2030-01-01")
 
     startdate = datetime.strptime(startdate,"%Y-%m-%d")
     enddate = datetime.strptime(enddate,"%Y-%m-%d").replace(hour=23, minute=59, second=59)
