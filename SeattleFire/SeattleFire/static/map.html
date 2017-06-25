@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-<html>
   <head>
     <style>
       /* Always set the map height explicitly to define the size of the div
@@ -64,7 +63,11 @@
 
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-      <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+      <!--
+                <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+      -->
+      <script src="/static/markerclusterer.min.js"></script>
+
   </head>
   <body>
   <nav class="navbar navbar-default">
@@ -344,8 +347,15 @@
 
       $('#loading').modal('show');
 
+      function getAllEventsContent(items) {
+          output = '';
+
+          for (i in items) {
+              output = output + getEventContent(items[i]);
+          }
+          return output;
+      }
       function getEventContent(item) {
-          console.log(item);
           var output = '<p>';
           output = output + 'Date: ' + item.datetime + '<br/>';
           output = output + 'Place: ' + item.rawlocation + '<br/>';
@@ -418,7 +428,10 @@
             }
 
             markerCluster = new MarkerClusterer(map, markers,
-                {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+                {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+                    zoomOnClick: false
+                });
             if (maptype == "heatmap") {
                 heatmap = new google.maps.visualization.HeatmapLayer({
                   data: heatmapdata,
@@ -426,6 +439,47 @@
                 });
                 heatmap.setMap(map);
             }
+
+            google.maps.event.addListener(markerCluster, 'click', function(cluster) {
+                var thisMarkerCluster = cluster;
+                if (!thisMarkerCluster.infowindow) {
+                    if (thisMarkerCluster.getSize() <= 10) {
+                        var contentString = "loading details...";
+                        if (thisMarkerCluster.detail) {
+                            contentString = getAllEventsContent(thisMarkerCluster.detail);
+                        }
+                        thisMarkerCluster.infowindow = new google.maps.InfoWindow({
+                            content: contentString
+                        });
+                    } else {
+                        thisMarkerCluster.infowindow = new google.maps.InfoWindow({
+                            content: "Too many incidents to show details"
+                        });
+                        thisMarkerCluster.detail = true;
+                    }
+                }
+                if (!thisMarkerCluster.infowindow.isOpen()) {
+                    thisMarkerCluster.infowindow.setPosition(thisMarkerCluster.getCenter())
+                    thisMarkerCluster.infowindow.open(map);
+                }
+                if (!thisMarkerCluster.detail) {
+                    args = '';
+                    for (i in thisMarkerCluster.getMarkers()) {
+                        args = args + '&number=' + thisMarkerCluster.getMarkers()[i].number
+                    }
+                    loadRequest = $.ajax({
+                        url: "/detail?" + args
+                    }).done(function(data) {
+                        thisMarkerCluster.detail = data;
+                        thisMarkerCluster.infowindow.close();
+                        thisMarkerCluster.infowindow = new google.maps.InfoWindow({
+                            content: getAllEventsContent(data)
+                        });
+                        thisMarkerCluster.infowindow.setPosition(thisMarkerCluster.getCenter())
+                        thisMarkerCluster.infowindow.open(map);
+                    })
+                }
+            });
 
             var weekdaygraphdata = data['totals']['weekday'];
             
