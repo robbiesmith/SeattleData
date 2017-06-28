@@ -25,7 +25,8 @@ def getCnxn(forced=False):
             cnxn = pyodbc.connect(connStr)
         else:
             cnxn = pyodbc.connect(Trusted_Connection='no',
-                driver='{ODBC Driver 13 for SQL Server}',
+#                driver='{ODBC Driver 13 for SQL Server}',
+                driver='{SQL Server}',
                 server='tcp:rsseattledata.database.windows.net,1433',
                 database='data',
                 Uid=data['username'],

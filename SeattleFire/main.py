@@ -62,7 +62,7 @@ def getOriginalDataForDate(single_date):
     root = tree.getroot()
 
     incidentRows = tree.xpath("//tr[@id]") # all table rows with id defined
-    for incidentRow in incidentRows:
+    for incidentRow in reversed(incidentRows):
         item = incidentRow.xpath("td")
         datetime = item[0].text;
         incidentId = item[1].text;
@@ -93,21 +93,21 @@ def readRawData():
     cursor = cnxnMgr.getCursor()
 
 #    start_date = date(2003, 11, 7) - data start
-    start_date = date(2017, 6, 17) # restart - run Jun 18
+    start_date = date(2017, 6, 25) # restart - run Jun 26
     end_date = date.today()
     for single_date in daterange(start_date, end_date):
         getOriginalDataForDate(single_date)
-        places.checkLocationByDate(cursor, single_date)
+#        places.checkLocationByDate(cursor, single_date)
     
-readRawData()
+#readRawData()
 
 def backfill():
     cursor = cnxnMgr.getCursor()
     
-    start_date = date(2017, 5, 24) # restart - run May 19
+    start_date = date(2017, 5, 24) # need to run backfill for june 18
     end_date = date.today()
     for single_date in daterange(start_date, end_date):
         print(single_date)
         places.checkLocationByDate(cursor, single_date)
 
-#backfill()
+backfill()

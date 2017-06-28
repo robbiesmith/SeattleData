@@ -55,6 +55,14 @@ create table incident_location (
                 on update cascade on delete cascade
 )
 
+create table tweet (
+  id bigint not null primary key,
+  incidentNumber varchar(12) references incident(number)
+                on update cascade on delete cascade,
+  text varchar(200) not null,
+  datetime datetime not null
+)
+
 ALTER TABLE incident_unit
 ALTER COLUMN incidentNumber varchar(12) not null;
 

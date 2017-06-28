@@ -400,7 +400,7 @@
                         var thisMarker = this;
                         var contentString = "loading details...";
                         if (thisMarker.detail) {
-                            contentString = getEventContent(thisMarker.detail);
+                            contentString = getAllEventsContent(thisMarker.detail);
                         }
                         thisMarker.infowindow = new google.maps.InfoWindow({
                             content: contentString
@@ -412,10 +412,10 @@
                             loadRequest = $.ajax({
                                 url: "/detail?number=" + this.number
                             }).done(function(data) {
-                                thisMarker.detail = data[0];
+                                thisMarker.detail = data;
                                 thisMarker.infowindow.close();
                                 thisMarker.infowindow = new google.maps.InfoWindow({
-                                    content: getEventContent(data[0])
+                                    content: getAllEventsContent(data)
                                 });
                                 thisMarker.infowindow.open(map, thisMarker);
                             })
