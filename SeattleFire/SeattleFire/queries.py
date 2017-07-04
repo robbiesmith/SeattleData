@@ -142,7 +142,7 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
 # for a list of incidents get types
 # for a list of incidents get units
 
-print('queries initialized')
+#print('queries initialized')
 #x = getIncidents(region=((47.671, -122.301), (47.675, -122.278)), dateRange=(date(2016, 1, 1), date.today()))
 #x = getIncidents([], [], [], ((47.671, -122.301), (47.675, -122.278)), (date(2016, 1, 1), date.today()))
 #x = getIncidents([], [], [], (), (date(2004, 1, 1), date.today()))

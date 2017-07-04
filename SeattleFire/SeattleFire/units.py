@@ -55,6 +55,7 @@ def allunits():
     'MAR31':'Fire Marshal',
     'MAR51':'Fire Marshal',
     'MAR5':'Fire Marshal',
+    'MRN1':'Marine',
     'FB4':'Fireboat',
     'FIREBOAT':'Fireboat',
     'HAZVAN':'HazMat',

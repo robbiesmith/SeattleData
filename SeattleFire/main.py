@@ -93,7 +93,7 @@ def readRawData():
     cursor = cnxnMgr.getCursor()
 
 #    start_date = date(2003, 11, 7) - data start
-    start_date = date(2017, 6, 25) # restart - run Jun 26
+    start_date = date(2017, 6, 26) # restart - run Jul 1
     end_date = date.today()
     for single_date in daterange(start_date, end_date):
         getOriginalDataForDate(single_date)
@@ -104,7 +104,7 @@ def readRawData():
 def backfill():
     cursor = cnxnMgr.getCursor()
     
-    start_date = date(2017, 5, 24) # need to run backfill for june 18
+    start_date = date(2017, 6, 15) # need to run backfill for june 18
     end_date = date.today()
     for single_date in daterange(start_date, end_date):
         print(single_date)

@@ -14,6 +14,8 @@ def distanceFromDowntown(location):
     
 def getLocationForAddress(address):
     address = address.replace(" / ", " & ") + " Seattle Washington"
+    if re.search("[a-z] ?[/]", address.lower()):
+        address = address.replace("/", " & ")
 #    geolocator = Nominatim()
 #    location = geolocator.geocode(address)
 #    sleep(0.80) # don't get Nominatim mad at you
@@ -60,14 +62,23 @@ def setStreet():
 # if place is not null
 # if contains a space-slash-space then separate these two parts into street and cross street
 # if starts with a number pull the number off and write the rest
-    results = cursor.execute("select * from location where place is not null and street_name is null").fetchall() # about 140,000 max - fits in memory
+#    results = cursor.execute("select * from location where place is not null and street_name is null").fetchall() # about 140,000 max - fits in memory
+    results = cursor.execute("select * from location where raw_location like'%/%' and street_name is null").fetchall() # about 140,000 max - fits in memory
     for row in results:
         location = row.raw_location
-        if " / " in location:
-            parts = location.split(" / ", 1)
+        if re.search(" [/] ", location.lower()):
+            parts = location.split("/")
             if len(parts) == 2:
                 cursor.execute("update location set street_name = ?, cross_street = ? where id = ?", parts[0], parts[1], row.id)
                 cursor.commit()
+        elif re.search("[a-z] ?[/]", location.lower()):
+            parts = location.split("/")
+            if len(parts) == 2:
+                cursor.execute("update location set street_name = ?, cross_street = ? where id = ?", parts[0], parts[1], row.id)
+                cursor.commit()
+        elif re.match("\d+ av[ e]", location.lower()):
+            # if a numbered ave then it's not a house number
+            pass
         elif re.match("\d+ ", location):
             parts = location.split(" ", 1)
             if len(parts) == 2:
@@ -90,7 +101,21 @@ def setStreet():
                 cursor.execute("update location set street_name = ? where id = ?", parts[2], row.id)
                 cursor.commit()
 
-#setStreet()
+setStreet()
+
+def checkForAv():
+    cursor = cnxnMgr.getCursor()
+    results = cursor.execute("select * from location where place is not null and lower(street_name) like 'av%'").fetchall() # about 
+    for row in results:
+        location = row.raw_location
+        if re.match("^\d+ av[ e//]", location.lower()):
+            cursor.execute("update location set place = null, street_number = null, street_name = null, cross_street = null where id = ?", row.id)
+            cursor.commit()
+            print(location)
+            print(row.street_name)
+            print()
+
+#checkForAv()
 
 def removeTooFar(cursor):
     results = cursor.execute("DECLARE @loc AS geography = geography::Point(47.6062, -122.3321, 4326); SELECT * FROM location WHERE place is not null and location.place.STDistance(@loc) > 20000").fetchall() # about 140,000 - fits in memory
