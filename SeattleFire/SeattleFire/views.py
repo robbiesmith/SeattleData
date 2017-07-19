@@ -2,6 +2,8 @@
 Routes and views for the flask application.
 """
 
+
+
 from datetime import datetime
 from flask import render_template, Response, request, send_from_directory
 from SeattleFire import app

@@ -37,20 +37,17 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
         if len(parts) == 4 and all(isFloat(i) for i in parts):
             lats = (parts[0], parts[2])
             longs = (parts[1], parts[3])
-#        lats = (region[0][0], region[1][0])
-#        longs =  (region[0][1], region[1][1])
-#        geoPrefix = "DECLARE @g geography; SET @g = geography::STPolyFromText('POLYGON((-122.301 47.671, -122.278 47.671, -122.278 47.675, -122.301 47.675, -122.301 47.671))', 4326);"
             geoPrefix = "DECLARE @g geography; SET @g = geography::STPolyFromText('POLYGON(({2} {0}, {2} {1}, {3} {1}, {3} {0}, {2} {0}))', 4326);".format(min(lats), max(lats), min(longs), max(longs))
             geoBody = "@g.STContains(location.place) = 1"
     date = "1=1"
     if dateRange:
         date = "incident.datetime between '" + dateRange[0].isoformat() + "' and '" + dateRange[1].isoformat() + "'"
 
-    output = {"incident":{}, "display":"all", "totals":{"type":{}, "unit":{}, "weekday":[0]*7, "month":[0]*13, "hour":[0]*24, "year":{}}} # note: month zero will never happen - one-based
+    output = {"incident":{},  "display":"all", "totals":{"type":{}, "unit":{}, "weekday":[0]*7, "month":[0]*13, "hour":[0]*24, "year":{}}} # note: month zero will never happen - one-based
 
     print("""
         {}
-        select incident.number, incident.datetime, location.place.Lat, location.place.Long, IT.raw_type, IU.unit_name, incident.raw_location from incident
+        select incident.number, incident.datetime, location.place.Lat, location.place.Long, IT.raw_type, IU.unit_name, location.raw_location from incident
         {}
         inner join incident_type as IT on incident.number = IT.incidentNumber
         inner join incident_location as IL on incident.number = IL.incidentNumber
@@ -127,7 +124,12 @@ def getIncidents(units=[], types=[], locations=[], region="", dateRange=()):
         if not incidentUnit in output["totals"]["unit"]:
             output["totals"]["unit"][incidentUnit] = 1
         else:
-            output["totals"]["unit"][incidentUnit] +=1
+            output["totals"]["unit"][incidentUnit] += 1
+
+#        if not incidentUnit in output["totals"]["unit"]:
+#            output["totals"]["unit"][incidentUnit] = 1
+#        else:
+#            output["totals"]["unit"][incidentUnit] += 1
 
 #    if i > fullDataLimit:
 #        output["display"] = "heatmap"

@@ -349,6 +349,7 @@
 
       function getAllEventsContent(items) {
           output = '';
+          console.log(items);
 
           for (i in items) {
               output = output + getEventContent(items[i]);
@@ -364,6 +365,13 @@
           for (var i = 0, len = item.unit.length; i < len; i++) {
               output = output + sep + item.unit[i];
               sep = ', ';
+          }
+          if (item.tweet && item.tweet.length > 0) {
+              var sep = '<br/>Tweets: ';
+              for (var i = 0, len = item.tweet.length; i < len; i++) {
+                  output = output + sep + item.tweet[i];
+                  sep = ', ';
+              }
           }
           output = output + '</p>';
           return output;
@@ -441,10 +449,12 @@
             }
 
             google.maps.event.addListener(markerCluster, 'click', function(cluster) {
+                console.log("click");
                 var thisMarkerCluster = cluster;
                 if (!thisMarkerCluster.infowindow) {
                     if (thisMarkerCluster.getSize() <= 10) {
                         var contentString = "loading details...";
+                        console.log("dog");
                         if (thisMarkerCluster.detail) {
                             contentString = getAllEventsContent(thisMarkerCluster.detail);
                         }
@@ -472,6 +482,7 @@
                     }).done(function(data) {
                         thisMarkerCluster.detail = data;
                         thisMarkerCluster.infowindow.close();
+                        console.log("cat");
                         thisMarkerCluster.infowindow = new google.maps.InfoWindow({
                             content: getAllEventsContent(data)
                         });

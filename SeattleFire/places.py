@@ -62,8 +62,8 @@ def setStreet():
 # if place is not null
 # if contains a space-slash-space then separate these two parts into street and cross street
 # if starts with a number pull the number off and write the rest
-#    results = cursor.execute("select * from location where place is not null and street_name is null").fetchall() # about 140,000 max - fits in memory
-    results = cursor.execute("select * from location where raw_location like'%/%' and street_name is null").fetchall() # about 140,000 max - fits in memory
+    results = cursor.execute("select * from location where place is not null and street_name is null").fetchall() # about 140,000 max - fits in memory
+#    results = cursor.execute("select * from location where raw_location like'%/%' and street_name is null").fetchall() # about 140,000 max - fits in memory
     for row in results:
         location = row.raw_location
         if re.search(" [/] ", location.lower()):
@@ -104,6 +104,7 @@ def setStreet():
 setStreet()
 
 def checkForAv():
+# one time method
     cursor = cnxnMgr.getCursor()
     results = cursor.execute("select * from location where place is not null and lower(street_name) like 'av%'").fetchall() # about 
     for row in results:
@@ -166,6 +167,8 @@ def checkLocationByDate(cursor, date):
 # make sure every address is close to the API address
 # make sure every address is no more than 20 km from downtown
 # if not write the API address
+
+# https://data.seattle.gov/resource/grwu-wqtk.json?$where=incident_number+=+%27F170063119%27
     alreadyChecked = []
     formatted = date.strftime("%Y-%m-%d")
     print(formatted)
@@ -196,6 +199,8 @@ def checkLocationByDate(cursor, date):
                 loc = Location(point=Point(latitude=officialLat, longitude=officialLong))
                 if distanceFromDowntown(loc) < 20:
                     print('write from official - nothing in DB')
+                    print(results[3])
+                    print(incidentNum)
                     print()
                     cursor.execute("update location set place = geography::Point(?, ?, 4326) where id = ?", officialLat, officialLong, results[4])
                     cursor.commit()
@@ -234,6 +239,7 @@ def checkLocationByDate(cursor, date):
                 print('write problem')
                 print((officialLat, officialLong), (results[1], results[2]))
                 print(results[3])
+                print(incidentNum)
                 print()
                 continue
         

@@ -2,6 +2,7 @@ from lxml import etree
 from datetime import timedelta, date
 import urllib.parse
 import places
+import twitterCollector
 from SeattleFire import config
 from SeattleFire import cnxnMgr
 
@@ -50,6 +51,23 @@ def writeIncidentUnits(cursor, incidentId, units):
         cursor.execute("if not exists (select incidentNumber from incident_unit where incidentNumber = ? and unit_name = ?) insert into incident_unit(incidentNumber, unit_name) values (?, ?)", incidentId, unit, incidentId, unit)
         cursor.commit()
 
+def initialProcessForIncident(incidentId, datetime, level, units, location, type):
+    cursor = cnxnMgr.getCursor()
+    writeIncident(cursor, incidentId, datetime, level)
+    if units:
+        writeUnits(cursor, units)
+        writeIncidentUnits(cursor, incidentId, units)
+    if type:
+        writeType(cursor, type)
+        writeIncidentType(cursor, incidentId, type)
+    if location:
+        if not doesLocationExist(cursor, location):
+            loc = places.getLocationForAddress(location)
+            writeLocation(cursor, location, loc)
+            # split street names & numbers
+        writeIncidentLocation(cursor, incidentId, location)
+        
+        
 def getOriginalDataForDate(single_date):
     cursor = cnxnMgr.getCursor()
     dateString = single_date.strftime("%m/%d/%Y")
@@ -76,30 +94,28 @@ def getOriginalDataForDate(single_date):
         print(incidentId)
         if not incidentId: # bad row - no idea what to do
             continue
-        writeIncident(cursor, incidentId, datetime, level)
-        if units:
-            writeUnits(cursor, units)
-            writeIncidentUnits(cursor, incidentId, units)
-        if type:
-            writeType(cursor, type)
-            writeIncidentType(cursor, incidentId, type)
-        if location:
-            if not doesLocationExist(cursor, location):
-                loc = places.getLocationForAddress(location)
-                writeLocation(cursor, location, loc)
-            writeIncidentLocation(cursor, incidentId, location)
-            
+        initialProcessForIncident(incidentId, datetime, level, units, location, type)
+    # match tweets for date
+    
 def readRawData():
+    twitterCollector.updateTweets()
+    # read all tweets since last one
     cursor = cnxnMgr.getCursor()
+    cursor.execute("select top 1 datetime from incident order by datetime desc")
 
 #    start_date = date(2003, 11, 7) - data start
-    start_date = date(2017, 6, 26) # restart - run Jul 1
+#    start_date = date(2017, 7, 17) # restart - run Jul 1
+    for row in cursor.fetchall():
+        start_date = (row[0] + timedelta(hours=1)).date()
+        break
     end_date = date.today()
     for single_date in daterange(start_date, end_date):
         getOriginalDataForDate(single_date)
-#        places.checkLocationByDate(cursor, single_date)
+        places.checkLocationByDate(cursor, single_date)
+        
+    twitterCollector.findIncidentsForAllTweets()
     
-#readRawData()
+readRawData()
 
 def backfill():
     cursor = cnxnMgr.getCursor()
@@ -110,4 +126,10 @@ def backfill():
         print(single_date)
         places.checkLocationByDate(cursor, single_date)
 
-backfill()
+#backfill()
+
+# readRawData
+# backfill
+# updateTweets
+# matchtweetstoIncidents
+# on 24 cycle with logging and error tolerance

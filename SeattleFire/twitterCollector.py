@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
 from datetime import timedelta
+import re
 
 def addTweet(id, text, datetime):
     cursor = cnxnMgr.getCursor()
@@ -58,6 +59,8 @@ def getFirstStreetContentWord(streetName):
     remove = ['e','n','s','w','ne','se','nw','sw','st','av','west','east','north','south']
     words = [ x for x in words if len(x)>1 ]
     words = [ x for x in words if x.lower() not in remove ]
+    if len(words) == 0:
+        return ''
     return(words[0])
     
 def removeIncidentFromTweet(tweetId):
@@ -85,101 +88,114 @@ def lookForFalseMatches():
                 removeIncidentFromTweet(tweet[0])
                 break
         
-def findIncidentForTweet(tweetId):
+def findIncidentForTweet(tweet):
     cursor = cnxnMgr.getCursor()
-    seen = []
-    cursor.execute("select id, datetime, text from tweet where incidentNumber is null")
-    for tweet in cursor.fetchall():
-        lower = tweet[1] + timedelta(hours=-24)
-        upper = tweet[1] + timedelta(hours=1)
-        for incident in cursor.execute("""
-        select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
-        inner join incident_type as IT on incident.number = IT.incidentNumber
-        inner join incident_location as IL on incident.number = IL.incidentNumber
-        inner join incident_unit as IU on incident.number = IU.incidentNumber
-        inner join location on IL.raw_location = location.raw_location
-        where incident.datetime between ? and ?
-        """, lower, upper):
-        # if house number and 5 char of street name in tweet
-            if not incident[0] in seen and incident[5] and len(incident[5]) > 1 and incident[5] + ' ' in tweet[2] and incident[6] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split():
-                print(incident[2])
-                print(incident[4])
-                print(tweet[2])
-                print()
-                seen.append(incident[0])
-                assignIncidentToTweet(incident[0], tweet[0])
-                break
-        continue
-        for incident in cursor.execute("""
-        select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
-        inner join incident_type as IT on incident.number = IT.incidentNumber
-        inner join incident_location as IL on incident.number = IL.incidentNumber
-        inner join incident_unit as IU on incident.number = IU.incidentNumber
-        inner join location on IL.raw_location = location.raw_location
-        where incident.datetime between ? and ?
-        """, lower, upper):
-        # if both the street and the cross street are in the tweet text based on distinct words
-            if not incident[0] in seen and incident[6] and incident[7] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split() and getFirstStreetContentWord(incident[7]).lower() in tweet[2].lower().split():
+    lower = tweet[1] + timedelta(hours=-24)
+    upper = tweet[1] + timedelta(hours=1)
+    for incident in cursor.execute("""
+    select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
+    inner join incident_type as IT on incident.number = IT.incidentNumber
+    inner join incident_location as IL on incident.number = IL.incidentNumber
+    inner join incident_unit as IU on incident.number = IU.incidentNumber
+    inner join location on IL.raw_location = location.raw_location
+    where incident.datetime between ? and ?
+    """, lower, upper):
+    # if house number and street content word in tweet
+        if incident[5] and len(incident[5]) > 1 and incident[5] + ' ' in tweet[2] and incident[6] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split():
+            print(incident[2])
+            print(incident[4])
+            print(tweet[2])
+            print()
+            assignIncidentToTweet(incident[0], tweet[0])
+            break
+    # if house number lines up with block in tweet and street content word in tweet
+        elif incident[5] and len(incident[5]) > 2 and re.search(" " + incident[5][:-2] + '00' + " ?bl?o?c?k", tweet[2]) and incident[6] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split():
+            print(incident[2])
+            print(incident[4])
+            print(tweet[2])
+            print()
+            assignIncidentToTweet(incident[0], tweet[0])
+            break
+    # if both the street and the cross street are in the tweet text based on distinct words
+        elif incident[6] and incident[7] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split() and getFirstStreetContentWord(incident[7]).lower() in tweet[2].lower().split():
 #                if incident[5] + ' ' in tweet[2]:
-                print(incident[2])
-                print(incident[4])
-                print(tweet[2])
-                print()
-                seen.append(incident[0])
-                assignIncidentToTweet(incident[0], tweet[0])
-                break
-        continue
-        for incident in cursor.execute("""
-        select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
-        inner join incident_type as IT on incident.number = IT.incidentNumber
-        inner join incident_location as IL on incident.number = IL.incidentNumber
-        inner join incident_unit as IU on incident.number = IU.incidentNumber
-        inner join location on IL.raw_location = location.raw_location
-        where incident.datetime between ? and ?
-        """, lower, upper):
-        # if both the street and the cross street are in the tweet text based on longest substring
-            if not incident[0] in seen and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4 and incident[7] and len(longest_common_substring(incident[7], tweet[2])) > 4:
+            print(incident[2])
+            print(incident[4])
+            print(tweet[2])
+            print()
+            assignIncidentToTweet(incident[0], tweet[0])
+            break
+    return
+    for incident in cursor.execute("""
+    select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
+    inner join incident_type as IT on incident.number = IT.incidentNumber
+    inner join incident_location as IL on incident.number = IL.incidentNumber
+    inner join incident_unit as IU on incident.number = IU.incidentNumber
+    inner join location on IL.raw_location = location.raw_location
+    where incident.datetime between ? and ?
+    """, lower, upper):
+    # if house number and 5 char of street name in tweet
+    # if both the street and the cross street are in the tweet text based on distinct words
+        if not incident[0] in seen and incident[6] and incident[7] and getFirstStreetContentWord(incident[6]).lower() in tweet[2].lower().split() and getFirstStreetContentWord(incident[7]).lower() in tweet[2].lower().split():
 #                if incident[5] + ' ' in tweet[2]:
-                print(incident[2])
-                print(incident[4])
-                print(tweet[2])
-                seen.append(incident[0])
-                assignIncidentToTweet(incident[0], tweet[0])
-                break
-        for incident in cursor.execute("""
-        select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
-        inner join incident_type as IT on incident.number = IT.incidentNumber
-        inner join incident_location as IL on incident.number = IL.incidentNumber
-        inner join incident_unit as IU on incident.number = IU.incidentNumber
-        inner join location on IL.raw_location = location.raw_location
-        where incident.datetime between ? and ?
-        and IU.unit_name = 'PIO'
-        """, lower, upper):
-        # since this is an incident the PIO responded to then we should be biased twoard accepting it
-            if not incident[0] in seen and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4:
+            print(incident[2])
+            print(incident[4])
+            print(tweet[2])
+            print()
+            seen.append(incident[0])
+            assignIncidentToTweet(incident[0], tweet[0])
+            break
+    return
+    for incident in cursor.execute("""
+    select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
+    inner join incident_type as IT on incident.number = IT.incidentNumber
+    inner join incident_location as IL on incident.number = IL.incidentNumber
+    inner join incident_unit as IU on incident.number = IU.incidentNumber
+    inner join location on IL.raw_location = location.raw_location
+    where incident.datetime between ? and ?
+    """, lower, upper):
+    # if both the street and the cross street are in the tweet text based on longest substring
+        if not incident[0] in seen and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4 and incident[7] and len(longest_common_substring(incident[7], tweet[2])) > 4:
 #                if incident[5] + ' ' in tweet[2]:
-                print(incident[4])
-                print(tweet[2])
-                seen.append(incident[0])
+            print(incident[2])
+            print(incident[4])
+            print(tweet[2])
+            seen.append(incident[0])
+            assignIncidentToTweet(incident[0], tweet[0])
+            break
+    for incident in cursor.execute("""
+    select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
+    inner join incident_type as IT on incident.number = IT.incidentNumber
+    inner join incident_location as IL on incident.number = IL.incidentNumber
+    inner join incident_unit as IU on incident.number = IU.incidentNumber
+    inner join location on IL.raw_location = location.raw_location
+    where incident.datetime between ? and ?
+    and IU.unit_name = 'PIO'
+    """, lower, upper):
+    # since this is an incident the PIO responded to then we should be biased twoard accepting it
+        if not incident[0] in seen and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4:
+#                if incident[5] + ' ' in tweet[2]:
+            print(incident[4])
+            print(tweet[2])
+            seen.append(incident[0])
 #                assignIncidentToTweet(incident[0], tweet[0])
+            break
+    for incident in cursor.execute("""
+    select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
+    inner join incident_type as IT on incident.number = IT.incidentNumber
+    inner join incident_location as IL on incident.number = IL.incidentNumber
+    inner join incident_unit as IU on incident.number = IU.incidentNumber
+    inner join location on IL.raw_location = location.raw_location
+    where incident.datetime between ? and ?
+    """, lower, upper):
+    # if house number and 5 char of street name in tweet
+        if not incident[0] in seen and incident[5] and len(incident[5]) > 1 and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4:
+            if incident[5] + ' ' in tweet[2]:
+                print(incident[4])
+                print(tweet[2])
+                seen.append(incident[0])
+                assignIncidentToTweet(incident[0], tweet[0])
                 break
-        for incident in cursor.execute("""
-        select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
-        inner join incident_type as IT on incident.number = IT.incidentNumber
-        inner join incident_location as IL on incident.number = IL.incidentNumber
-        inner join incident_unit as IU on incident.number = IU.incidentNumber
-        inner join location on IL.raw_location = location.raw_location
-        where incident.datetime between ? and ?
-        """, lower, upper):
-        # if house number and 5 char of street name in tweet
-            if not incident[0] in seen and incident[5] and len(incident[5]) > 1 and incident[6] and len(longest_common_substring(incident[6], tweet[2])) > 4:
-                if incident[5] + ' ' in tweet[2]:
-                    print(incident[4])
-                    print(tweet[2])
-                    seen.append(incident[0])
-                    assignIncidentToTweet(incident[0], tweet[0])
-                    break
-    print(len(seen))
 
 
     # get timestamp on tweet
@@ -189,8 +205,13 @@ def findIncidentForTweet(tweetId):
     # watch for incidents that generate multiple tweets
     # watch for posts that link to the blog and expand the search timeline - espeically ones that have mutiple tweets already
     
-    pass
-    
+def findIncidentsForAllTweets():
+    cursor = cnxnMgr.getCursor()
+    seen = []
+    cursor.execute("select id, datetime, text from tweet where incidentNumber is null")
+    for tweet in cursor.fetchall():
+        findIncidentForTweet(tweet)
+   
 def getAllTweets():
     # one-time method to get all tweets (limited to 3200 due to Twitter API limit)
     min_id_seen = None
@@ -201,7 +222,7 @@ def getAllTweets():
             d = datetime.datetime.strptime( r.created_at, "%a %b %d %H:%M:%S %z %Y" )
             u = utc_to_local(d)
             addTweet(r.id, r.text, u)
-            min_id_seen = r.id
+            min_id_seen = r.idnl
             print(min_id_seen)
     
 def getOldTweets():
@@ -221,7 +242,7 @@ def getOldTweets():
             text = h.find_element_by_class_name("tweet-text").text
             timeVal = h.find_element_by_class_name("tweet-timestamp").get_attribute("title")
             d = datetime.datetime.strptime( timeVal, "%I:%M %p - %d %b %Y" )
-            addTweet(int(id), text[:200], d)
+            addTweet(int(id), text[:200], d) #
         time.sleep(2)
         driver.close()
 
@@ -233,7 +254,7 @@ def getOldTweets():
 #getOldTweets()
 
 #updateTweets()
-
-findIncidentForTweet(None)
+#findIncidentsForAllTweets()
+#findIncidentForTweet(None)
 
 #lookForFalseMatches()
