@@ -126,6 +126,7 @@ def findIncidentForTweet(tweet):
             assignIncidentToTweet(incident[0], tweet[0])
             break
     return
+    # I'm not convinced about any of the matching approaches below
     for incident in cursor.execute("""
     select incident.number, incident.datetime, IT.raw_type, IU.unit_name, location.raw_location, location.street_number, location.street_name, location.cross_street from incident
     inner join incident_type as IT on incident.number = IT.incidentNumber
@@ -201,6 +202,8 @@ def findIncidentForTweet(tweet):
     # get timestamp on tweet
     # look for incident that happened before it up to a few hours (and watch out for daylight savings)
     # see if street name is in tweet
+    # see if cross street is in tweet
+    # see if house number or block is in tweet
     # see if other keywords (fire, vehicle, ...) are in tweet
     # watch for incidents that generate multiple tweets
     # watch for posts that link to the blog and expand the search timeline - espeically ones that have mutiple tweets already

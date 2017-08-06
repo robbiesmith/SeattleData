@@ -270,7 +270,7 @@
         }
       </script>
 
-    <script>
+      <script>
       var map;
       var rectangle;
       var markers = [];
@@ -278,7 +278,7 @@
       var heatmap = null;
       var loadRequest = null;
       var markerCluster = null;
-      
+
       function deleteMarkers() {
         for (var i = 0; i < markers.length; i++) {
           markers[i].setMap(null);
@@ -288,14 +288,14 @@
             markerCluster.clearMarkers()
         }
       }
-      
+
       function deleteHeatmap() {
         if (heatmap) {
             heatmap.setMap(null);
         }
         heatmapdata = [];
       }
-      
+
       $("#clearEventTypes").click(function(e){
         $("#typeholder").find("input").prop('checked',false);
         e.preventDefault();
@@ -308,20 +308,20 @@
       $("#regionOn").click(function(e){
         rectangle.setMap(map);
         $("#regionDropdown").find("li").removeClass("active");
-        $(this).parent().addClass('active'); 
+        $(this).parent().addClass('active');
         e.preventDefault();
         });
       $("#regionOff").click(function(e){
         rectangle.setMap(null);
         $("#regionDropdown").find("li").removeClass("active");
-        $(this).parent().addClass('active'); 
+        $(this).parent().addClass('active');
         e.preventDefault();
       });
-      
+
       function deleteGraphs() {
         d3.selectAll("svg").html("");
       }
-      
+
       function loadData(options={}) {
           var units = options.units || [];
           var types = options.types || [];
@@ -366,13 +366,18 @@
               output = output + sep + item.unit[i];
               sep = ', ';
           }
+          /*
+          can't use tweets - SeattleFire deletes too many
           if (item.tweet && item.tweet.length > 0) {
               var sep = '<br/>Tweets: ';
+
               for (var i = 0, len = item.tweet.length; i < len; i++) {
-                  output = output + sep + item.tweet[i];
+      //  item.tweet[i]
+                  output = output + sep + '<a href="https://twitter.com/SeattleFire/status/' + item.tweet[i] +'">tweet</a>';
                   sep = ', ';
               }
           }
+          */
           output = output + '</p>';
           return output;
       }
