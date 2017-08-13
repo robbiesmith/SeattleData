@@ -46,11 +46,18 @@
             width: 120px;
             height: 120px;
             animation: spin 2s linear infinite;
+            margin: auto;
         }
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        a.u:hover, a.u:visited, a.u:link, a.u:active
+        {
+            color: #000000;
+            text-decoration: none;
         }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -608,7 +615,7 @@
         }).done(function(data) {
           var unitContent = $("<div class='row-fluid'></div>");
         for (item in data) {
-            unitContent.append('<div class="col-md-3"><input type="checkbox" name="unitpicker[]" value="' + item + '">' + item + '</div>');
+            unitContent.append('<div class="col-md-3"><input type="checkbox" name="unitpicker[]" value="' + item + '"><a class="u" href="#" data-toggle="tooltip" title="' + data[item].type + '&#10;' + data[item].location + '">' + item + '</a></div>');
 
         }
         $("#unitholder").append($("<div class='container-fluid'></div>").append(unitContent));

@@ -7,7 +7,7 @@ def getDetail(itemNumbers):
 
     # guard against SQL injection
     for number in itemNumbers:
-        if not re.match("F\d+$", number):
+        if not re.match("[FBMVST]\d+$", number):
             return output
 
     for row in cursor.execute("""

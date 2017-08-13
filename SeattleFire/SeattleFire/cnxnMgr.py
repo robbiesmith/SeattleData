@@ -23,6 +23,7 @@ def getCnxn(forced=False):
 #            connStr = "Driver={ODBC Driver 13 for SQL Server};Server=tcp:rsseattledata.database.windows.net,1433;Database=data;Uid=robsmith@rsseattledata;Pwd=kaurapo/0kaurapo/0;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
             print(connStr)
             cnxn = pyodbc.connect(connStr)
+            cnxn.timeout = 100
         else:
             cnxn = pyodbc.connect(Trusted_Connection='no',
 #                driver='{ODBC Driver 13 for SQL Server}',
