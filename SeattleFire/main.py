@@ -5,6 +5,7 @@ import places
 import twitterCollector
 from SeattleFire import config
 from SeattleFire import cnxnMgr
+import time
 
 
 def daterange(start_date, end_date):
@@ -115,7 +116,7 @@ def readRawData():
         
     twitterCollector.findIncidentsForAllTweets()
     
-readRawData()
+
 
 def backfill():
     cursor = cnxnMgr.getCursor()
@@ -125,6 +126,11 @@ def backfill():
     for single_date in daterange(start_date, end_date):
         print(single_date)
         places.checkLocationByDate(cursor, single_date)
+
+if __name__ == "__main__":
+    while True:
+        readRawData()
+        time.sleep(86400)
 
 #backfill()
 

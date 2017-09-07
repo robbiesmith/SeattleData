@@ -291,8 +291,9 @@
           markers[i].setMap(null);
         }
         markers = [];
+
         if (markerCluster) {
-            markerCluster.clearMarkers()
+            markerCluster.clearMarkers();
         }
       }
 
@@ -466,7 +467,6 @@
                 if (!thisMarkerCluster.infowindow) {
                     if (thisMarkerCluster.getSize() <= 10) {
                         var contentString = "loading details...";
-                        console.log("dog");
                         if (thisMarkerCluster.detail) {
                             contentString = getAllEventsContent(thisMarkerCluster.detail);
                         }
@@ -483,6 +483,7 @@
                 if (!thisMarkerCluster.infowindow.isOpen()) {
                     thisMarkerCluster.infowindow.setPosition(thisMarkerCluster.getCenter())
                     thisMarkerCluster.infowindow.open(map);
+
                 }
                 if (!thisMarkerCluster.detail) {
                     args = '';
@@ -562,7 +563,7 @@
             }
           
             setgraph($.map(typegraphdata, function(value, key) { return value }), $.map(typegraphdata, function(value, key) { return key }), "#typechart");
-    
+            $('#data').modal('show');
         }).fail(function(data) {
             loadRequest = null;
 
@@ -590,19 +591,19 @@
           mapTypeId: 'terrain'
         });
       rectangle = new google.maps.Rectangle({
-    strokeColor: '#FF0000',
-    strokeOpacity: 0.8,
-    strokeWeight: 2,
-    fillColor: '#FF0000',
-    fillOpacity: 0.15,
-    editable: true,
-    bounds: {
-      north: 47.73548,
-      south: 47.500876,
-      east: -122.24447,
-      west: -122.44
-    }
-  });
+        strokeColor: '#FF0000',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#FF0000',
+        fillOpacity: 0.15,
+        editable: true,
+        bounds: {
+          north: 47.73548,
+          south: 47.500876,
+          east: -122.24447,
+          west: -122.44
+        }
+      });
      google.maps.event.addListener(map, 'zoom_changed', function () {
 //          heatmap.setOptions({radius:getNewRadius()});
 // {radius:Math.floor(desiredRadiusPerPointInMeters*pixelsPerMeter)}
