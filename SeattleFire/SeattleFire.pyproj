@@ -53,6 +53,7 @@
   <ItemGroup>
     <Content Include="SeattleFire\static\map.html" />
     <Content Include="requirements.txt" />
+    <Content Include="SeattleFire\static\map.js" />
     <Content Include="SeattleFire\static\markerclusterer.min.js" />
     <None Include="rsseattlefire - Web Deploy.pubxml" />
   </ItemGroup>
